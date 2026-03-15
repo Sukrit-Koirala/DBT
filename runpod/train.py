@@ -100,7 +100,8 @@ def train(
         print(f"  Resuming {run_name} from step {start_step} ({ckpt_path})")
         state = torch.load(ckpt_path, map_location=device)
         model.load_state_dict(state["model"])
-        optimizer.load_state_dict(state["optimizer"])
+        if "optimizer" in state:
+            optimizer.load_state_dict(state["optimizer"])
         start_step += 1  # start from next step
 
     wandb.init(
