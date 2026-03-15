@@ -46,10 +46,29 @@ def _inf_loader(loader: DataLoader) -> Iterator:
         yield from loader
 
 
-def _save(model: GPTModel, cfg: TrainConfig, tag: str, step: int):
+def _save(model: GPTModel, optimizer, cfg: TrainConfig, tag: str, step: int):
     path = os.path.join(cfg.checkpoint_dir, f"{tag}_step{step}.pt")
-    torch.save({"step": step, "model": model.state_dict()}, path)
+    torch.save({"step": step, "model": model.state_dict(), "optimizer": optimizer.state_dict()}, path)
     return path
+
+
+def _find_latest_checkpoint(checkpoint_dir: str, run_name: str) -> tuple[str, int] | None:
+    """Return (path, step) of the latest periodic checkpoint for this run, or None."""
+    if not os.path.isdir(checkpoint_dir):
+        return None
+    candidates = []
+    for fname in os.listdir(checkpoint_dir):
+        # Match periodic checkpoints only (not _best)
+        if fname.startswith(run_name + "_step") and fname.endswith(".pt"):
+            try:
+                step = int(fname[len(run_name) + len("_step"):-len(".pt")])
+                candidates.append((step, os.path.join(checkpoint_dir, fname)))
+            except ValueError:
+                pass
+    if not candidates:
+        return None
+    step, path = max(candidates, key=lambda x: x[0])
+    return path, step
 
 
 def train(
@@ -73,6 +92,17 @@ def train(
 
     os.makedirs(cfg.checkpoint_dir, exist_ok=True)
 
+    # --- Resume from checkpoint if available ---
+    start_step = 0
+    ckpt = _find_latest_checkpoint(cfg.checkpoint_dir, run_name)
+    if ckpt:
+        ckpt_path, start_step = ckpt
+        print(f"  Resuming {run_name} from step {start_step} ({ckpt_path})")
+        state = torch.load(ckpt_path, map_location=device)
+        model.load_state_dict(state["model"])
+        optimizer.load_state_dict(state["optimizer"])
+        start_step += 1  # start from next step
+
     wandb.init(
         project=cfg.wandb_project,
         name=run_name,
@@ -93,7 +123,7 @@ def train(
     train_losses  = []
     data_iter     = _inf_loader(train_loader)
 
-    for step in range(cfg.max_steps):
+    for step in range(start_step, cfg.max_steps):
         lr = get_lr(step, cfg)
         for pg in optimizer.param_groups:
             pg["lr"] = lr
@@ -116,7 +146,7 @@ def train(
 
         # ---- Periodic checkpoint (every save_interval steps) ----
         if step > 0 and step % cfg.save_interval == 0:
-            _save(model, cfg, run_name, step)
+            _save(model, optimizer, cfg, run_name, step)
 
         # ---- Eval ----
         is_eval = (step % cfg.eval_interval == 0) or (step == cfg.max_steps - 1)
@@ -130,7 +160,7 @@ def train(
 
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
-                _save(model, cfg, f"{run_name}_best", step)
+                _save(model, optimizer, cfg, f"{run_name}_best", step)
 
             print(
                 f"[{run_name}] step {step:6d}/{cfg.max_steps} | "
