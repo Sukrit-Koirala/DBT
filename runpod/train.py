@@ -14,6 +14,7 @@ import torch
 import wandb
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from config import TrainConfig
 from model import GPTModel
@@ -124,7 +125,10 @@ def train(
     train_losses  = []
     data_iter     = _inf_loader(train_loader)
 
-    for step in range(start_step, cfg.max_steps):
+    pbar = tqdm(range(start_step, cfg.max_steps), initial=start_step, total=cfg.max_steps,
+                desc=run_name, dynamic_ncols=True)
+
+    for step in pbar:
         lr = get_lr(step, cfg)
         for pg in optimizer.param_groups:
             pg["lr"] = lr
@@ -137,6 +141,8 @@ def train(
         loss.backward()
         grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), cfg.grad_clip)
         optimizer.step()
+
+        pbar.set_postfix(loss=f"{loss.item():.4f}", lr=f"{lr:.2e}")
 
         metrics = {
             "train/loss":       loss.item(),
@@ -163,7 +169,7 @@ def train(
                 best_val_loss = val_loss
                 _save(model, optimizer, cfg, f"{run_name}_best", step)
 
-            print(
+            pbar.write(
                 f"[{run_name}] step {step:6d}/{cfg.max_steps} | "
                 f"loss {loss.item():.4f} | val {val_loss:.4f} | ppl {val_ppl:.1f} | lr {lr:.2e}"
             )
