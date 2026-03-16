@@ -58,7 +58,8 @@ def get_batch(seq_len=1024, n_seqs=8, cache_dir="data"):
     """Pull a fixed batch from WikiText-103 val for consistent probing."""
     tokenizer = AutoTokenizer.from_pretrained("gpt2")
     ds        = load_dataset("wikitext", "wikitext-103-raw-v1", cache_dir=cache_dir)
-    tokens    = tokenizer.encode("\n".join(ds["validation"]["text"]))
+    tokens    = tokenizer.encode("\n".join(ds["validation"]["text"]),
+                                truncation=False, max_length=None)
     tokens    = torch.tensor(tokens[:seq_len * (n_seqs + 1)], dtype=torch.long)
     x = tokens[: seq_len * n_seqs].view(n_seqs, seq_len)
     y = tokens[1: seq_len * n_seqs + 1].view(n_seqs, seq_len)
@@ -81,15 +82,11 @@ def attach_hooks(model):
             continue
 
         def make_hook(idx):
-            def hook(module, inputs, output):
-                # output of config_net is (gamma_raw, beta)
-                # gamma = 1 + gamma_raw  (applied in forward)
-                # we want the raw conditioning vectors
-                with torch.no_grad():
-                    attn_out = inputs[0]          # ConfigNet input
-                    g_raw, b = module(attn_out)   # (B, T, d_ff) each
+            def hook(_module, _inputs, output):
+                # output is already (gamma_raw, beta) — use it directly, don't call module again
+                g_raw, b = output
                 captures[idx] = {
-                    "gamma": (1.0 + g_raw).detach().cpu(),  # actual scale applied
+                    "gamma": (1.0 + g_raw).detach().cpu(),
                     "beta":  b.detach().cpu(),
                 }
             return hook
