@@ -29,7 +29,7 @@ from train import train
 def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--size",       default="large", choices=["small", "medium", "large"])
-    p.add_argument("--model",      default="both",  choices=["baseline", "film", "both"])
+    p.add_argument("--model",      default="film",  choices=["baseline", "film", "both"])
     p.add_argument("--steps",      type=int, default=None)
     p.add_argument("--batch_size", type=int, default=None)
     p.add_argument("--hf_token",   default=None)
