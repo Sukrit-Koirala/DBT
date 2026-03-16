@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(python analysis/plot_baseline_large.py)",
+      "Bash(python analysis/parse_log.py)",
+      "Bash(python analysis/plot_curves.py)",
+      "Bash(python -c \"import pandas as pd; df = pd.read_excel\\(''analysis/baseline_large_training_log.xlsx''\\); print\\(df.head\\(20\\)\\); print\\(df.columns.tolist\\(\\)\\)\")",
+      "Bash(python -c \":*)",
+      "Bash(python analysis/comparisons/compare.py)",
+      "Bash(python analysis/draw_architecture.py)"
+    ]
+  }
+}

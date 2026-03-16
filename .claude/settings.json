@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import openpyxl; wb = openpyxl.load_workbook\\(''runpod/analysis/baseline_large_training_log.xlsx''\\); ws = wb.active; print\\(''Columns:'', [cell.value for cell in next\\(ws.iter_rows\\(\\)\\)]\\); print\\(''Row 2:'', [cell.value for cell in list\\(ws.iter_rows\\(\\)\\)[1]]\\); print\\(''Total rows:'', ws.max_row\\)\")",
+      "Bash(python -c \"import pandas as pd; df = pd.read_excel\\(''runpod/analysis/baseline_large_training_log.xlsx''\\); print\\(df.columns.tolist\\(\\)\\); print\\(df.head\\(3\\)\\); print\\(''Shape:'', df.shape\\)\")"
+    ],
+    "additionalDirectories": [
+      "e:\\GPT_1\\runpod"
+    ]
+  }
+}
