@@ -30,7 +30,9 @@ def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--size",       default="large", choices=["small", "medium", "large"])
     p.add_argument("--model",      default="film",  choices=["baseline", "film", "both"])
-    p.add_argument("--steps",      type=int, default=None)
+    p.add_argument("--steps",         type=int, default=None)
+    p.add_argument("--save_interval", type=int, default=None,
+                   help="Checkpoint every N steps (0 = final only)")
     p.add_argument("--batch_size", type=int, default=None)
     p.add_argument("--hf_token",   default=None)
     p.add_argument("--wandb_key",  default=None)
@@ -66,8 +68,10 @@ def main():
     build_model_cfg = CONFIG_PRESETS[args.size]
     train_cfg       = TRAIN_PRESETS[args.size]
 
-    if args.steps:      train_cfg.max_steps  = args.steps
-    if args.batch_size: train_cfg.batch_size = args.batch_size
+    if args.steps:         train_cfg.max_steps    = args.steps
+    if args.batch_size:    train_cfg.batch_size   = args.batch_size
+    if args.save_interval is not None:
+        train_cfg.save_interval = args.save_interval if args.save_interval > 0 else args.steps + 1
     train_cfg.wandb_mode     = args.wandb_mode
     train_cfg.checkpoint_dir = args.checkpoint_dir
 
