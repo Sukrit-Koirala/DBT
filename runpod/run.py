@@ -42,6 +42,8 @@ def parse_args():
     p.add_argument("--dataset",    default="openwebtext",
                    choices=["openwebtext", "wikitext-103-raw-v1"])
     p.add_argument("--num_workers",type=int, default=4)
+    p.add_argument("--tag",        default=None,
+                   help="Suffix appended to run name (e.g. 'modified')")
     return p.parse_args()
 
 
@@ -94,7 +96,7 @@ def main():
         model_cfg            = build_model_cfg(model_type)
         model_cfg.vocab_size = vocab_size
         model                = GPTModel(model_cfg)
-        run_name             = f"{model_type}_{args.size}"
+        run_name             = f"{model_type}_{args.size}" + (f"_{args.tag}" if args.tag else "")
 
         print(f"\n{'='*60}")
         print(f"  {model}")
