@@ -229,15 +229,15 @@ def plot_stability(all_results, out_dir):
     colors = plt.cm.viridis(np.linspace(0, 1, n_layers))
 
     for li, layer in enumerate(sorted(all_results[0][1].keys())):
-        layer_gamma_mag = [r[1][layer]["gamma_mag"] for r in all_results]
-        layer_beta_var  = [r[2][layer]["beta_var"]  for r in all_results]
+        layer_gamma_mag = [r[1][layer]["gamma_mag"]  for r in all_results]
+        layer_gamma_var = [r[2][layer]["gamma_var"]  for r in all_results]
         axes[0].plot(steps, layer_gamma_mag, marker="o", color=colors[li], linewidth=2, label=f"L{layer}")
-        axes[1].plot(steps, layer_beta_var,  marker="o", color=colors[li], linewidth=2, label=f"L{layer}")
+        axes[1].plot(steps, layer_gamma_var, marker="o", color=colors[li], linewidth=2, label=f"L{layer}")
 
     axes[0].set_title("Gamma Magnitude per Layer over Training", fontsize=12)
     axes[0].set_xlabel("Step"); axes[0].set_ylabel("Gamma magnitude"); axes[0].legend(fontsize=8); axes[0].grid(True, alpha=0.3)
-    axes[1].set_title("Beta Token Variance per Layer over Training", fontsize=12)
-    axes[1].set_xlabel("Step"); axes[1].set_ylabel("Beta token variance"); axes[1].legend(fontsize=8); axes[1].grid(True, alpha=0.3)
+    axes[1].set_title("Gamma Token Variance per Layer over Training", fontsize=12)
+    axes[1].set_xlabel("Step"); axes[1].set_ylabel("Gamma token variance"); axes[1].legend(fontsize=8); axes[1].grid(True, alpha=0.3)
 
     plt.suptitle("Per-Layer ConfigNet Evolution", fontsize=14)
     plt.tight_layout()

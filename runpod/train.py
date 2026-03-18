@@ -83,21 +83,9 @@ def train(
     model.to(device)
     model.train()
 
-    # Separate param groups: ConfigNet gets 3x higher LR so it keeps
-    # learning aggressively as the main model's LR decays.
-    confignet_params, base_params = [], []
-    for name, p in model.named_parameters():
-        if "config_net" in name:
-            confignet_params.append(p)
-        else:
-            base_params.append(p)
-
-    param_groups = [{"params": base_params, "lr": cfg.lr}]
-    if confignet_params:
-        param_groups.append({"params": confignet_params, "lr": cfg.lr * 3, "confignet": True})
-
     optimizer = AdamW(
-        param_groups,
+        model.parameters(),
+        lr=cfg.lr,
         weight_decay=cfg.weight_decay,
         betas=(0.9, 0.95),
         eps=1e-8,
@@ -143,7 +131,7 @@ def train(
     for step in pbar:
         lr = get_lr(step, cfg)
         for pg in optimizer.param_groups:
-            pg["lr"] = lr * (3 if pg.get("confignet") else 1)
+            pg["lr"] = lr
 
         x, y = next(data_iter)
         x, y = x.to(device), y.to(device)
